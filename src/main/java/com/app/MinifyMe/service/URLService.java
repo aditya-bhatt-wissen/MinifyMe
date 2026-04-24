@@ -1,6 +1,8 @@
 package com.app.MinifyMe.service;
 
 import com.app.MinifyMe.entity.ShortURL;
+import com.app.MinifyMe.event.URLEvent;
+import com.app.MinifyMe.kafka.URLEventProducer;
 import com.app.MinifyMe.repository.URLRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class URLService {
     private final URLRepository urlRepository;
+    private final URLEventProducer eventProducer;
     private static final String BASE62 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int SHORT_CODE_LENGTH = 6;
     private final Random random = new Random();
@@ -29,9 +32,19 @@ public class URLService {
 
         urlRepository.save(shortURL);
 
+        // Publish Kafka event
+        URLEvent event = URLEvent.builder()
+                .shortCode(shortCode)
+                .originalUrl(originalUrl)
+                .eventType("SHORTENED")
+                .timestamp(LocalDateTime.now())
+                .build();
+        eventProducer.publishUrlShortenedEvent(event);
+
         return shortCode;
     }
 
+    // ...existing code...
     private String generateUniqueShortCode() {
         String code;
 
@@ -65,6 +78,16 @@ public class URLService {
         // Increment click count
         shortUrl.setClickCount(shortUrl.getClickCount() + 1);
         urlRepository.save(shortUrl);
+
+        // Publish Kafka event
+        URLEvent event = URLEvent.builder()
+                .shortCode(shortCode)
+                .originalUrl(shortUrl.getOriginalUrl())
+                .eventType("ACCESSED")
+                .timestamp(LocalDateTime.now())
+                .clickCount(shortUrl.getClickCount())
+                .build();
+        eventProducer.publishUrlAccessedEvent(event);
 
         return shortUrl.getOriginalUrl();
     }
