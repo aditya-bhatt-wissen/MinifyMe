@@ -5,6 +5,7 @@ import com.app.MinifyMe.event.URLEvent;
 import com.app.MinifyMe.kafka.URLEventProducer;
 import com.app.MinifyMe.repository.URLRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,7 +15,10 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class URLService {
     private final URLRepository urlRepository;
-    private final URLEventProducer eventProducer;
+
+    @Autowired(required = false)
+    private URLEventProducer eventProducer;
+
     private static final String BASE62 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int SHORT_CODE_LENGTH = 6;
     private final Random random = new Random();
@@ -33,18 +37,19 @@ public class URLService {
         urlRepository.save(shortURL);
 
         // Publish Kafka event
-        URLEvent event = URLEvent.builder()
-                .shortCode(shortCode)
-                .originalUrl(originalUrl)
-                .eventType("SHORTENED")
-                .timestamp(LocalDateTime.now())
-                .build();
-        eventProducer.publishUrlShortenedEvent(event);
+        if (eventProducer != null) {
+            URLEvent event = URLEvent.builder()
+                    .shortCode(shortCode)
+                    .originalUrl(originalUrl)
+                    .eventType("SHORTENED")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            eventProducer.publishUrlShortenedEvent(event);
+        }
 
         return shortCode;
     }
 
-    // ...existing code...
     private String generateUniqueShortCode() {
         String code;
 
@@ -80,14 +85,16 @@ public class URLService {
         urlRepository.save(shortUrl);
 
         // Publish Kafka event
-        URLEvent event = URLEvent.builder()
-                .shortCode(shortCode)
-                .originalUrl(shortUrl.getOriginalUrl())
-                .eventType("ACCESSED")
-                .timestamp(LocalDateTime.now())
-                .clickCount(shortUrl.getClickCount())
-                .build();
-        eventProducer.publishUrlAccessedEvent(event);
+        if (eventProducer != null) {
+            URLEvent event = URLEvent.builder()
+                    .shortCode(shortCode)
+                    .originalUrl(shortUrl.getOriginalUrl())
+                    .eventType("ACCESSED")
+                    .timestamp(LocalDateTime.now())
+                    .clickCount(shortUrl.getClickCount())
+                    .build();
+            eventProducer.publishUrlAccessedEvent(event);
+        }
 
         return shortUrl.getOriginalUrl();
     }

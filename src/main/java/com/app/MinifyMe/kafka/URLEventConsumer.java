@@ -2,11 +2,13 @@ package com.app.MinifyMe.kafka;
 
 import com.app.MinifyMe.event.URLEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@ConditionalOnProperty(name = "spring.kafka.bootstrap-servers", matchIfMissing = false)
 public class URLEventConsumer {
 
     @KafkaListener(topics = "${spring.kafka.topics.url-shortened}", groupId = "${spring.kafka.consumer.group-id}")
