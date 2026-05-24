@@ -1,15 +1,13 @@
-package com.app.MinifyMe;
+package com.sivalabs.urlshortener;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.kafka.annotation.EnableKafka;
 
 @SpringBootApplication
-@EnableKafka
-public class MinifyMeApplication {
+public class SpringBootUrlShortenerApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MinifyMeApplication.class, args);
+		SpringApplication.run(SpringBootUrlShortenerApplication.class, args);
 	}
 
 }
